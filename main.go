@@ -9,7 +9,7 @@ import (
 func main() {
 	port := "8080"
 	fmt.Print("Listening on port " + port)
-	http.HandleFunc("/healthcheck", api.HealthCheckHandler)
+	api.Routes()
 	err := http.ListenAndServe(":"+port, nil)
 	if err != nil {
 		fmt.Print("\n")
