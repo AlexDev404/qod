@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"qotd/cmd/api/types"
 
 	"github.com/julienschmidt/httprouter"
 )
@@ -15,4 +16,18 @@ type HealthCheck struct {
 func HealthCheckHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(HealthCheck{Status: "OK"})
+}
+
+func (c *serverConfig) CreateQuoteHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	var quote types.Quote
+	if err := json.NewDecoder(r.Body).Decode(&quote); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if err := c.db.WriteQuote(quote); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(quote)
 }
