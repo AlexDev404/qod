@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"qotd/cmd/api/database"
 	"qotd/cmd/api/types"
 
 	"github.com/julienschmidt/httprouter"
@@ -25,13 +26,8 @@ func (c *serverConfig) CreateQuoteHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	if quote.Author == "" {
-		http.Error(w, "Field 'Author' missing", http.StatusBadRequest)
-		return
-	}
-
-	if quote.Text == "" {
-		http.Error(w, "Field 'Text' missing", http.StatusBadRequest)
+	if err := database.ValidateQuote(quote); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 

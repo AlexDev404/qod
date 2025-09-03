@@ -1,5 +1,5 @@
 package database
 
 const (
-	DATABASE_UNSUPPORTED = "unsupported database type"
+	DATABASE_UNSUPPORTED = "Unsupported database type"
 )

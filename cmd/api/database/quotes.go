@@ -81,3 +81,14 @@ func (db *Database) ModifyQuote(quoteID int, quote types.Quote) error {
 	}
 	return fmt.Errorf(DATABASE_UNSUPPORTED)
 }
+
+func ValidateQuote(quote types.Quote) error {
+	if quote.Author == "" {
+		return fmt.Errorf("Field 'Author' missing")
+	}
+
+	if quote.Text == "" {
+		return fmt.Errorf("Field 'Text' missing")
+	}
+	return nil
+}
