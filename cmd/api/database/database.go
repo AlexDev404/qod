@@ -21,6 +21,10 @@ type Database struct {
 
 func NewDatabase(dbType DatabaseType, connectionString *string) *Database {
 	// @todo Database connection logic
+	if connectionString == nil {
+		connectionString = new(string)
+		*connectionString = ""
+	}
 	return &Database{
 		connectionString: *connectionString,
 		dbType:           dbType,

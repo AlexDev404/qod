@@ -13,5 +13,6 @@ func (c *serverConfig) routes() {
 		HealthCheckHandler(w, r, ps)
 	})
 	router.POST(v1("/quotes"), c.CreateQuoteHandler)
+	router.GET(v1("/quotes"), c.GetQuotesHandler)
 	http.ListenAndServe(":"+fmt.Sprint(c.port), router)
 }

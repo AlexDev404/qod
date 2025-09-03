@@ -21,6 +21,14 @@ func (db *Database) WriteQuote(quote types.Quote) error {
 	// @todo Implement writing quotes to the database
 	switch db.dbType {
 	case InMemory:
+		// Find the last quote's ID and assign the next ID
+		lastID := 0
+		for _, q := range InMemoryQuotes {
+			if q.ID > lastID {
+				lastID = q.ID
+			}
+		}
+		quote.ID = lastID + 1
 		InMemoryQuotes = append(InMemoryQuotes, quote)
 		return nil
 	case Postgres:
