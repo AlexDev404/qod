@@ -19,6 +19,15 @@ func (db *Database) GetQuotes() ([]types.Quote, error) {
 
 func (db *Database) WriteQuote(quote types.Quote) error {
 	// @todo Implement writing quotes to the database
+	/*
+	 * Already completed
+	 * ===============
+	 * 1. In-memory database writing
+	 *
+	 * Not_completed_Todos
+	 * ==============
+	 * 1. PostgreSQL writing
+	 */
 	switch db.dbType {
 	case InMemory:
 		// Find the last quote's ID and assign the next ID
