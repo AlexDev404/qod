@@ -14,7 +14,7 @@ func (db *Database) GetQuotes() ([]types.Quote, error) {
 		// Fetch quotes from Postgres database
 		return nil, nil
 	}
-	return nil, fmt.Errorf("unsupported database type")
+	return nil, fmt.Errorf(DATABASE_UNSUPPORTED)
 }
 
 func (db *Database) WriteQuote(quote types.Quote) error {
@@ -27,7 +27,7 @@ func (db *Database) WriteQuote(quote types.Quote) error {
 		// Write quote to Postgres database
 		return nil
 	}
-	return fmt.Errorf("unsupported database type")
+	return fmt.Errorf(DATABASE_UNSUPPORTED)
 }
 
 func (db *Database) GetQuoteByID(id int) (*types.Quote, error) {
@@ -44,7 +44,7 @@ func (db *Database) GetQuoteByID(id int) (*types.Quote, error) {
 		// Fetch quote by ID from Postgres database
 		return nil, nil
 	}
-	return nil, fmt.Errorf("unsupported database type")
+	return nil, fmt.Errorf(DATABASE_UNSUPPORTED)
 }
 
 func (db *Database) ModifyQuote(quoteID int, quote types.Quote) error {
@@ -62,5 +62,5 @@ func (db *Database) ModifyQuote(quoteID int, quote types.Quote) error {
 		// Modify quote in Postgres database
 		return nil
 	}
-	return fmt.Errorf("unsupported database type")
+	return fmt.Errorf(DATABASE_UNSUPPORTED)
 }
