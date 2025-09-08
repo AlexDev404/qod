@@ -6,7 +6,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-func (c *serverConfig) routes() {
+func (c *serverConfig) routes() http.Handler {
 	c.router.NotFound = http.HandlerFunc(c.notFoundResponse)
 	c.router.MethodNotAllowed = http.HandlerFunc(c.methodNotAllowedResponse)
 
@@ -16,5 +16,5 @@ func (c *serverConfig) routes() {
 	c.router.POST(v1("/quotes"), c.CreateQuoteHandler)
 	c.router.GET(v1("/quotes"), c.GetQuotesHandler)
 	c.router.POST(v1("/comments"), c.CreateCommentHandler)
-
+	return c.RecoverPanic(c.router)
 }
