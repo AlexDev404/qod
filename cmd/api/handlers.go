@@ -14,9 +14,19 @@ type HealthCheck struct {
 	Environment string `json:"environment,omitempty"`
 }
 
-func HealthCheckHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(HealthCheck{Status: "OK"})
+func (c *serverConfig) HealthCheckHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	data := envelope{
+		"status": "alive",
+		"system_info": map[string]string{
+			"environment": c.env,
+			"version":     c.version,
+		},
+	}
+	err := c.writeResponseJSON(w, http.StatusOK, data, nil)
+	if err != nil {
+		c.logger.Error(err.Error())
+		http.Error(w, ERROR_INTERNAL, http.StatusInternalServerError)
+	}
 }
 
 func (c *serverConfig) CreateQuoteHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
