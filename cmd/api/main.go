@@ -35,7 +35,8 @@ func main() {
 	fmt.Print("Listening on port " + fmt.Sprint(config.port))
 	config.routes()
 	err := http.ListenAndServe(":"+fmt.Sprint(config.port), config.router)
-	if err != nil {
+	err1 := config.db.Connect()
+	if err != nil || err1 != nil {
 		fmt.Print("\n")
 		fmt.Print(err)
 	}

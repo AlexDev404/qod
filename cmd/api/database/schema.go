@@ -30,23 +30,10 @@ type Database struct {
 var logger = slog.New(slog.NewTextHandler(os.Stderr, nil))
 
 func NewDatabase(dbType DatabaseType, connectionString *string) *Database {
-	// @todo Database connection logic
+	// @completed Database connection logic
 	if connectionString == nil {
 		connectionString = new(string)
 		*connectionString = ""
-	} else {
-		if dbType == Postgres {
-			db, err := openDB(*connectionString)
-			if err != nil {
-				logger.Error(err.Error())
-				os.Exit(1)
-			}
-			// release the database resources before exiting
-			defer db.Close()
-
-			logger.Info("database connection pool established")
-
-		}
 	}
 	return &Database{
 		connectionString: *connectionString,
@@ -54,14 +41,28 @@ func NewDatabase(dbType DatabaseType, connectionString *string) *Database {
 	}
 }
 
-func (db *Database) Connect() error {
+func (ctx *Database) Connect() error {
 	// @todo Implement database connection logic
-	switch db.dbType {
+	switch ctx.dbType {
 	case InMemory:
 		// Connect to in-memory database
 		return nil
 	case Postgres:
 		// Connect to Postgres database
+
+		db, err := openDB(ctx.connectionString)
+		if err != nil {
+			logger.Error(err.Error())
+			return err
+		}
+		// release the database resources before exiting
+		defer db.Close()
+
+		// Assign the context
+		ctx.context = db
+
+		logger.Info("database connection pool established")
+
 		return nil
 	}
 	return fmt.Errorf("unsupported database type")
@@ -77,6 +78,7 @@ func (db *Database) Disconnect() error {
 		return nil
 	case Postgres:
 		// Disconnect from Postgres database
+		db.context.Close()
 		return nil
 	}
 	return fmt.Errorf("unsupported database type")
