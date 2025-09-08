@@ -6,6 +6,7 @@ import (
 )
 
 var InMemoryQuotes []types.Quote
+var InMemoryComments []types.Comment
 
 type DatabaseType int
 

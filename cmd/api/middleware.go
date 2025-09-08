@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 )
 
@@ -13,7 +12,7 @@ func RecoverPanic(next http.Handler) http.Handler {
 			err := recover()
 			if err != nil {
 				w.Header().Set("Connection", "close")
-				http.
+				// http.
 			}
 		}()
 		next.ServeHTTP(w, r)

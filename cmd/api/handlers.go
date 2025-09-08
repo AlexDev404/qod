@@ -63,3 +63,23 @@ func (c *serverConfig) GetQuotesHandler(w http.ResponseWriter, r *http.Request, 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(quotes)
 }
+
+func (c *serverConfig) CreateCommentHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	var comment types.Comment
+	if err := c.readRequestJSON(w, r, &comment); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if err := database.ValidateComment(comment); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if err := c.db.WriteComment(comment); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(comment)
+}
