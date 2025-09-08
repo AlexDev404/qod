@@ -1,8 +1,13 @@
 package database
 
 import (
+	"database/sql"
 	"fmt"
+	"log/slog"
+	"os"
 	"qotd/cmd/api/types"
+
+	_ "github.com/lib/pq"
 )
 
 var InMemoryQuotes []types.Quote
@@ -18,13 +23,30 @@ const (
 type Database struct {
 	connectionString string
 	dbType           DatabaseType
+	context          *sql.DB
 }
+
+// Create a logger
+var logger = slog.New(slog.NewTextHandler(os.Stderr, nil))
 
 func NewDatabase(dbType DatabaseType, connectionString *string) *Database {
 	// @todo Database connection logic
 	if connectionString == nil {
 		connectionString = new(string)
 		*connectionString = ""
+	} else {
+		if dbType == Postgres {
+			db, err := openDB(*connectionString)
+			if err != nil {
+				logger.Error(err.Error())
+				os.Exit(1)
+			}
+			// release the database resources before exiting
+			defer db.Close()
+
+			logger.Info("database connection pool established")
+
+		}
 	}
 	return &Database{
 		connectionString: *connectionString,
