@@ -14,7 +14,7 @@ func (db *Database) GetQuotes() ([]types.Quote, error) {
 	case Postgres:
 		// Fetch quotes from Postgres database
 		query := `
-			SELECT id, content, author, created_at
+			SELECT id, text, author, created_at
 			FROM quotes
 		`
 		ctx, cancel := context.WithTimeout(context.Background(), db.queryTimeout)
@@ -65,7 +65,7 @@ func (db *Database) WriteQuote(quote types.Quote) error {
 	case Postgres:
 		// Write quote to Postgres database
 		query := `
-			INSERT INTO quotes (content, author)
+			INSERT INTO quotes (text, author)
 			VALUES ($1, $2)
 			RETURNING id, created_at
 		`
@@ -95,7 +95,7 @@ func (db *Database) GetQuoteByID(id int) (*types.Quote, error) {
 	case Postgres:
 		// Fetch quote by ID from Postgres database
 		query := `
-			SELECT id, content, author, created_at
+			SELECT id, text, author, created_at
 			FROM quotes
 			WHERE id = $1
 		`
@@ -127,7 +127,7 @@ func (db *Database) ModifyQuote(quoteID int, quote types.Quote) error {
 		// Modify quote in Postgres database
 		query := `
 			UPDATE quotes
-			SET content = $1, author = $2
+			SET text = $1, author = $2
 			WHERE id = $3
 		`
 		args := []any{quote.Text, quote.Author, quoteID}
