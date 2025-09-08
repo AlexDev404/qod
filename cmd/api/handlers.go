@@ -31,7 +31,7 @@ func (c *serverConfig) HealthCheckHandler(w http.ResponseWriter, r *http.Request
 
 func (c *serverConfig) CreateQuoteHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	var quote types.Quote
-	if err := json.NewDecoder(r.Body).Decode(&quote); err != nil {
+	if err := c.readRequestJSON(w, r, &quote); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
