@@ -15,6 +15,7 @@ func (c *serverConfig) routes() http.Handler {
 	})
 	c.router.POST(v1("/quotes"), c.CreateQuoteHandler)
 	c.router.GET(v1("/quotes"), c.GetQuotesHandler)
+	c.router.GET(v1("/comments"), c.GetCommentsHandler)
 	c.router.POST(v1("/comments"), c.CreateCommentHandler)
 	return c.RecoverPanic(c.router)
 }

@@ -83,3 +83,16 @@ func (c *serverConfig) CreateCommentHandler(w http.ResponseWriter, r *http.Reque
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(comment)
 }
+
+func (c *serverConfig) GetCommentsHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	comments, err := c.db.GetComments()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if len(comments) == 0 {
+		comments = []types.Comment{}
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(comments)
+}
