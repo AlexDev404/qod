@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"os"
 	"qotd/cmd/api/types"
+	"time"
 
 	_ "github.com/lib/pq"
 )
@@ -24,6 +25,7 @@ type Database struct {
 	connectionString string
 	dbType           DatabaseType
 	context          *sql.DB
+	queryTimeout     time.Duration
 }
 
 // Create a logger
@@ -38,6 +40,7 @@ func NewDatabase(dbType DatabaseType, connectionString *string) *Database {
 	return &Database{
 		connectionString: *connectionString,
 		dbType:           dbType,
+		queryTimeout:     3 * time.Second,
 	}
 }
 
