@@ -3,10 +3,12 @@ package database
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"time"
 )
 
 func openDB(dsn string) (*sql.DB, error) {
+	fmt.Println("Opening database with DSN:", dsn)
 	// open a connection pool
 	sqlDB, err := sql.Open("postgres", dsn)
 	if err != nil {
@@ -14,8 +16,7 @@ func openDB(dsn string) (*sql.DB, error) {
 	}
 
 	// set a context to ensure DB operations don't take too long
-	ctx, cancel := context.WithTimeout(context.Background(),
-		5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	// let's test if the connection pool was created

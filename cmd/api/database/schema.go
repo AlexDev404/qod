@@ -52,15 +52,11 @@ func (ctx *Database) Connect() error {
 		return nil
 	case Postgres:
 		// Connect to Postgres database
-
 		db, err := openDB(ctx.connectionString)
 		if err != nil {
 			logger.Error(err.Error())
-			return err
+			os.Exit(1)
 		}
-		// release the database resources before exiting
-		defer db.Close()
-
 		// Assign the context
 		ctx.context = db
 

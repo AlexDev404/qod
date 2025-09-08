@@ -65,11 +65,13 @@ func main() {
 	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
 	config.logger = logger
 
-	fmt.Print("Listening on port " + fmt.Sprint(config.port))
+	fmt.Println("Listening on port " + fmt.Sprint(config.port))
 	config.routes()
+	config.db.Connect()
 	err := http.ListenAndServe(":"+fmt.Sprint(config.port), config.router)
-	err1 := config.db.Connect()
-	if err != nil || err1 != nil {
+	// release the database resources before exiting
+	defer config.db.Disconnect()
+	if err != nil {
 		fmt.Print("\n")
 		fmt.Print(err)
 	}
