@@ -6,8 +6,8 @@ import (
 	"qotd/cmd/api/types"
 )
 
+// Fetching quotes from the database
 func (db *Database) GetQuotes() ([]types.Quote, error) {
-	// @completed Implement fetching quotes from the database
 	switch db.dbType {
 	case InMemory:
 		return InMemoryQuotes, nil
@@ -39,8 +39,8 @@ func (db *Database) GetQuotes() ([]types.Quote, error) {
 	return nil, fmt.Errorf(DATABASE_UNSUPPORTED)
 }
 
+// Writing quotes to the database
 func (db *Database) WriteQuote(quote types.Quote) error {
-	// @completed Implement writing quotes to the database
 	/*
 	 * Already completed
 	 * ===============
@@ -82,8 +82,8 @@ func (db *Database) WriteQuote(quote types.Quote) error {
 	return fmt.Errorf(DATABASE_UNSUPPORTED)
 }
 
+// Fetching a single, specific quote by ID from the database
 func (db *Database) GetQuoteByID(id int) (*types.Quote, error) {
-	// @completed Implement fetching a single quote by ID from the database
 	switch db.dbType {
 	case InMemory:
 		for _, quote := range InMemoryQuotes {
@@ -112,8 +112,8 @@ func (db *Database) GetQuoteByID(id int) (*types.Quote, error) {
 	return nil, fmt.Errorf(DATABASE_UNSUPPORTED)
 }
 
+// Modifying a quote in the database
 func (db *Database) ModifyQuote(quoteID int, quote types.Quote) error {
-	// @todo Implement modifying a quote in the database
 	switch db.dbType {
 	case InMemory:
 		for i, q := range InMemoryQuotes {
@@ -134,6 +134,36 @@ func (db *Database) ModifyQuote(quoteID int, quote types.Quote) error {
 		ctx, cancel := context.WithTimeout(context.Background(), db.queryTimeout)
 		defer cancel()
 		_, err := db.context.ExecContext(ctx, query, args...)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+	return fmt.Errorf(DATABASE_UNSUPPORTED)
+}
+
+// Deleting a quote from the database
+func (db *Database) DeleteQuote(id int) error {
+	switch db.dbType {
+	case InMemory:
+		for i, quote := range InMemoryQuotes {
+			if quote.ID == id {
+				InMemoryQuotes = append(InMemoryQuotes[:i], InMemoryQuotes[i+1:]...)
+				return nil
+			}
+		}
+		return fmt.Errorf("quote not found")
+	case Postgres:
+		// Delete quote from Postgres database
+		query := `
+
+			DELETE FROM quotes
+			WHERE id = $1
+		`
+		ctx, cancel := context.WithTimeout(context.Background(), db.queryTimeout)
+		defer cancel()
+
+		_, err := db.context.ExecContext(ctx, query, id)
 		if err != nil {
 			return err
 		}

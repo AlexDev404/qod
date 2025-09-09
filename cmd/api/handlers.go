@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"qotd/cmd/api/database"
 	"qotd/cmd/api/types"
+	"strconv"
 
 	"github.com/julienschmidt/httprouter"
 )
@@ -64,6 +65,47 @@ func (c *serverConfig) GetQuotesHandler(w http.ResponseWriter, r *http.Request, 
 	json.NewEncoder(w).Encode(quotes)
 }
 
+func (c *serverConfig) UpdateQuoteHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	// Extract the quote ID from the URL parameters
+	idStr := ps.ByName("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "Invalid ID format", http.StatusBadRequest)
+		return
+	}
+	var updatedQuote types.Quote
+	if err := c.readRequestJSON(w, r, &updatedQuote); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if err := database.ValidateQuote(updatedQuote); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	updatedQuote.ID = id
+	if err := c.db.ModifyQuote(id, updatedQuote); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(updatedQuote)
+}
+
+func (c *serverConfig) DeleteQuoteHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	// Extract the quote ID from the URL parameters
+	idStr := ps.ByName("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "Invalid ID format", http.StatusBadRequest)
+		return
+	}
+	if err := c.db.DeleteQuote(id); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (c *serverConfig) CreateCommentHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	var comment types.Comment
 	if err := c.readRequestJSON(w, r, &comment); err != nil {
@@ -95,4 +137,45 @@ func (c *serverConfig) GetCommentsHandler(w http.ResponseWriter, r *http.Request
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(comments)
+}
+
+func (c *serverConfig) UpdateCommentHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	// Extract the comment ID from the URL parameters
+	idStr := ps.ByName("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "Invalid ID format", http.StatusBadRequest)
+		return
+	}
+	var updatedComment types.Comment
+	if err := c.readRequestJSON(w, r, &updatedComment); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if err := database.ValidateComment(updatedComment); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	updatedComment.ID = id
+	if err := c.db.ModifyComment(id, updatedComment); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(updatedComment)
+}
+
+func (c *serverConfig) DeleteCommentHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	// Extract the comment ID from the URL parameters
+	idStr := ps.ByName("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "Invalid ID format", http.StatusBadRequest)
+		return
+	}
+	if err := c.db.DeleteComment(id); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }

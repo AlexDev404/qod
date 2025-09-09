@@ -51,7 +51,7 @@ func (db *Database) WriteComment(comment types.Comment) error {
 	switch db.dbType {
 	case InMemory:
 		// Find the last comment's ID and assign the next ID
-		lastID := int64(0)
+		lastID := int(0)
 		for _, c := range InMemoryComments {
 			if c.ID > lastID {
 				lastID = c.ID
@@ -80,7 +80,7 @@ func (db *Database) WriteComment(comment types.Comment) error {
 	return fmt.Errorf(DATABASE_UNSUPPORTED)
 }
 
-func (db *Database) GetCommentByID(id int64) (*types.Comment, error) {
+func (db *Database) GetCommentByID(id int) (*types.Comment, error) {
 	// @completed Implement fetching a single comment by ID from the database
 	switch db.dbType {
 	case InMemory:
@@ -110,7 +110,7 @@ func (db *Database) GetCommentByID(id int64) (*types.Comment, error) {
 	return nil, fmt.Errorf(DATABASE_UNSUPPORTED)
 }
 
-func (db *Database) ModifyComment(commentID int64, comment types.Comment) error {
+func (db *Database) ModifyComment(commentID int, comment types.Comment) error {
 	// @completed Implement modifying a comment in the database
 	switch db.dbType {
 	case InMemory:
@@ -152,4 +152,40 @@ func ValidateComment(comment types.Comment) error {
 		return fmt.Errorf("Field 'Content' missing")
 	}
 	return nil
+}
+
+func (db *Database) DeleteComment(id int) error {
+	// @completed Implement deleting a comment from the database
+	switch db.dbType {
+	case InMemory:
+		for i, c := range InMemoryComments {
+			if c.ID == id {
+				InMemoryComments = append(InMemoryComments[:i], InMemoryComments[i+1:]...)
+				return nil
+			}
+		}
+		return fmt.Errorf("comment not found")
+	case Postgres:
+		// Delete comment from Postgres database
+		query := `
+			DELETE FROM comments
+			WHERE id = $1
+		`
+		ctx, cancel := context.WithTimeout(context.Background(), db.queryTimeout)
+		defer cancel()
+
+		result, err := db.context.ExecContext(ctx, query, id)
+		if err != nil {
+			return err
+		}
+		rowsAffected, err := result.RowsAffected()
+		if err != nil {
+			return err
+		}
+		if rowsAffected == 0 {
+			return fmt.Errorf("comment not found")
+		}
+		return nil
+	}
+	return fmt.Errorf(DATABASE_UNSUPPORTED)
 }
