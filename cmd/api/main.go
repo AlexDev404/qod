@@ -42,7 +42,7 @@ func main() {
 	fmt.Println(dbDsn)
 	fmt.Println(dbType)
 
-	flag.IntVar(&config.port, "port", 8080, "API server port")
+	flag.IntVar(&config.port, "port", config.port, "API server port")
 
 	if dbType != "IN_MEMORY" && dbType != "POSTGRES" {
 		fmt.Print("Error: Unsupported database type. Use IN_MEMORY or POSTGRES.\n")
