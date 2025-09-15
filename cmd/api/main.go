@@ -66,9 +66,9 @@ func main() {
 	config.logger = logger
 
 	fmt.Println("Listening on port " + fmt.Sprint(config.port))
-	config.routes()
+	router := config.routes()
 	config.db.Connect()
-	err := http.ListenAndServe(":"+fmt.Sprint(config.port), config.router)
+	err := http.ListenAndServe(":"+fmt.Sprint(config.port), router)
 	// release the database resources before exiting
 	defer config.db.Disconnect()
 	if err != nil {

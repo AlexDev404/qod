@@ -15,15 +15,15 @@ func (c *serverConfig) routes() http.Handler {
 	})
 
 	// Quotes
-	c.router.POST(v1("/quotes"), c.CreateQuoteHandler)              // C
-	c.router.GET(v1("/quotes"), c.GetQuotesHandler)                 // R
-	c.router.PUT(v1("/quotes/:id"), c.UpdateQuoteHandler)           // U
-	c.router.DELETE(v1("/quotes/:id"), c.DeleteQuoteHandler)        // D
+	c.router.POST(v1("/quotes"), c.CreateQuoteHandler)       // C
+	c.router.GET(v1("/quotes"), c.GetQuotesHandler)          // R
+	c.router.PUT(v1("/quotes/:id"), c.UpdateQuoteHandler)    // U
+	c.router.DELETE(v1("/quotes/:id"), c.DeleteQuoteHandler) // D
 
 	// Comments
-	c.router.POST(v1("/comments"), c.CreateCommentHandler)          // C
-	c.router.GET(v1("/comments"), c.GetCommentsHandler)             // R
-	c.router.PUT(v1("/comments/:id"), c.UpdateCommentHandler)       // U
-	c.router.DELETE(v1("/comments/:id"), c.DeleteCommentHandler)    // D
-	return c.RecoverPanic(c.router)
+	c.router.POST(v1("/comments"), c.CreateCommentHandler)       // C
+	c.router.GET(v1("/comments"), c.GetCommentsHandler)          // R
+	c.router.PUT(v1("/comments/:id"), c.UpdateCommentHandler)    // U
+	c.router.DELETE(v1("/comments/:id"), c.DeleteCommentHandler) // D
+	return c.middleware(c.router)
 }
