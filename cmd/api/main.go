@@ -21,15 +21,16 @@ type serverConfig struct {
 }
 
 func main() {
+	// Initialize the server configuration
 	config := serverConfig{
-		port:    8080,
-		env:     "development",
-		version: "1.0.0",
+		port:    getEnvAsInt("PORT", 8080),
+		env:     getEnvAsString("ENVIRONMENT", "development"),
+		version: getEnvAsString("API_VERSION", "v1"),
 		router:  httprouter.New(),
 	}
 
-	dbDsn := os.Getenv("DB_DSN")
-	dbType := os.Getenv("DB_TYPE")
+	dbDsn := getEnvAsString("DB_DSN", "")
+	dbType := getEnvAsString("DB_TYPE", "IN_MEMORY")
 
 	// Read in the database type
 	flag.StringVar(&dbType, "db-type", dbType, "Database type (IN_MEMORY or POSTGRES)")
@@ -66,6 +67,7 @@ func main() {
 	config.logger = logger
 
 	fmt.Println("Listening on port " + fmt.Sprint(config.port))
+	fmt.Println("Environment: " + config.env)
 	router := config.routes()
 	config.db.Connect()
 	err := http.ListenAndServe(":"+fmt.Sprint(config.port), router)
