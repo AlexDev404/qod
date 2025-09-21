@@ -4,20 +4,112 @@ import (
 	"context"
 	"fmt"
 	"qotd/cmd/api/types"
+	"sort"
 	"time"
 )
 
+// sortComments sorts comments based on the given field and order
+func sortComments(comments []types.Comment, sortBy, sortOrder string) {
+	switch sortBy {
+	case "id":
+		if sortOrder == "desc" {
+			sort.Slice(comments, func(i, j int) bool { return comments[i].ID > comments[j].ID })
+		} else {
+			sort.Slice(comments, func(i, j int) bool { return comments[i].ID < comments[j].ID })
+		}
+	case "author":
+		if sortOrder == "desc" {
+			sort.Slice(comments, func(i, j int) bool { return comments[i].Author > comments[j].Author })
+		} else {
+			sort.Slice(comments, func(i, j int) bool { return comments[i].Author < comments[j].Author })
+		}
+	case "content":
+		if sortOrder == "desc" {
+			sort.Slice(comments, func(i, j int) bool { return comments[i].Content > comments[j].Content })
+		} else {
+			sort.Slice(comments, func(i, j int) bool { return comments[i].Content < comments[j].Content })
+		}
+	case "created_at":
+		if sortOrder == "desc" {
+			sort.Slice(comments, func(i, j int) bool { return comments[i].CreatedAt.After(comments[j].CreatedAt) })
+		} else {
+			sort.Slice(comments, func(i, j int) bool { return comments[i].CreatedAt.Before(comments[j].CreatedAt) })
+		}
+	case "version":
+		if sortOrder == "desc" {
+			sort.Slice(comments, func(i, j int) bool { return comments[i].Version > comments[j].Version })
+		} else {
+			sort.Slice(comments, func(i, j int) bool { return comments[i].Version < comments[j].Version })
+		}
+	}
+}
+
 func (db *Database) GetComments() ([]types.Comment, error) {
-	// @completed Implement fetching comments from the database
+	return db.GetCommentsWithPagination(0, 0, "", "")
+}
+
+// GetCommentsWithPagination fetches comments from the database with pagination and sorting
+func (db *Database) GetCommentsWithPagination(limit, offset int, sortBy, sortOrder string) ([]types.Comment, error) {
 	switch db.dbType {
 	case InMemory:
-		return InMemoryComments, nil
+		comments := make([]types.Comment, len(InMemoryComments))
+		copy(comments, InMemoryComments)
+
+		// Apply sorting
+		if sortBy != "" {
+			sortComments(comments, sortBy, sortOrder)
+		}
+
+		// Apply pagination
+		if limit > 0 {
+			start := offset
+			if start > len(comments) {
+				return []types.Comment{}, nil
+			}
+			end := start + limit
+			if end > len(comments) {
+				end = len(comments)
+			}
+			return comments[start:end], nil
+		}
+		return comments, nil
 	case Postgres:
-		// Fetch comments from Postgres database
+		// Build the query with sorting and pagination
 		query := `
 			SELECT id, content, author, created_at, version
 			FROM comments
 		`
+
+		// Add ORDER BY clause
+		if sortBy != "" {
+			orderBy := "created_at" // default
+			switch sortBy {
+			case "id":
+				orderBy = "id"
+			case "author":
+				orderBy = "author"
+			case "content":
+				orderBy = "content"
+			case "created_at":
+				orderBy = "created_at"
+			case "version":
+				orderBy = "version"
+			}
+
+			order := "ASC"
+			if sortOrder == "desc" {
+				order = "DESC"
+			}
+			query += fmt.Sprintf(" ORDER BY %s %s", orderBy, order)
+		} else {
+			query += " ORDER BY created_at DESC"
+		}
+
+		// Add LIMIT and OFFSET
+		if limit > 0 {
+			query += fmt.Sprintf(" LIMIT %d OFFSET %d", limit, offset)
+		}
+
 		ctx, cancel := context.WithTimeout(context.Background(), db.queryTimeout)
 		defer cancel()
 

@@ -51,7 +51,11 @@ func (c *serverConfig) CreateQuoteHandler(w http.ResponseWriter, r *http.Request
 }
 
 func (c *serverConfig) GetQuotesHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	quotes, err := c.db.GetQuotes()
+	// Parse pagination and sorting parameters
+	limit, offset := parsePaginationParams(r)
+	sortBy, sortOrder := parseSortParams(r)
+
+	quotes, err := c.db.GetQuotesWithPagination(limit, offset, sortBy, sortOrder)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -127,7 +131,11 @@ func (c *serverConfig) CreateCommentHandler(w http.ResponseWriter, r *http.Reque
 }
 
 func (c *serverConfig) GetCommentsHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	comments, err := c.db.GetComments()
+	// Parse pagination and sorting parameters
+	limit, offset := parsePaginationParams(r)
+	sortBy, sortOrder := parseSortParams(r)
+
+	comments, err := c.db.GetCommentsWithPagination(limit, offset, sortBy, sortOrder)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

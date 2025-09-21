@@ -4,19 +4,104 @@ import (
 	"context"
 	"fmt"
 	"qotd/cmd/api/types"
+	"sort"
 )
+
+// sortQuotes sorts quotes based on the given field and order
+func sortQuotes(quotes []types.Quote, sortBy, sortOrder string) {
+	switch sortBy {
+	case "id":
+		if sortOrder == "desc" {
+			sort.Slice(quotes, func(i, j int) bool { return quotes[i].ID > quotes[j].ID })
+		} else {
+			sort.Slice(quotes, func(i, j int) bool { return quotes[i].ID < quotes[j].ID })
+		}
+	case "author":
+		if sortOrder == "desc" {
+			sort.Slice(quotes, func(i, j int) bool { return quotes[i].Author > quotes[j].Author })
+		} else {
+			sort.Slice(quotes, func(i, j int) bool { return quotes[i].Author < quotes[j].Author })
+		}
+	case "text":
+		if sortOrder == "desc" {
+			sort.Slice(quotes, func(i, j int) bool { return quotes[i].Text > quotes[j].Text })
+		} else {
+			sort.Slice(quotes, func(i, j int) bool { return quotes[i].Text < quotes[j].Text })
+		}
+	case "created_at":
+		if sortOrder == "desc" {
+			sort.Slice(quotes, func(i, j int) bool { return quotes[i].CreatedAt.After(quotes[j].CreatedAt) })
+		} else {
+			sort.Slice(quotes, func(i, j int) bool { return quotes[i].CreatedAt.Before(quotes[j].CreatedAt) })
+		}
+	}
+}
 
 // Fetching quotes from the database
 func (db *Database) GetQuotes() ([]types.Quote, error) {
+	return db.GetQuotesWithPagination(0, 0, "", "")
+}
+
+// Fetching quotes from the database with pagination and sorting
+func (db *Database) GetQuotesWithPagination(limit, offset int, sortBy, sortOrder string) ([]types.Quote, error) {
 	switch db.dbType {
 	case InMemory:
-		return InMemoryQuotes, nil
+		quotes := make([]types.Quote, len(InMemoryQuotes))
+		copy(quotes, InMemoryQuotes)
+
+		// Apply sorting
+		if sortBy != "" {
+			sortQuotes(quotes, sortBy, sortOrder)
+		}
+
+		// Apply pagination
+		if limit > 0 {
+			start := offset
+			if start > len(quotes) {
+				return []types.Quote{}, nil
+			}
+			end := start + limit
+			if end > len(quotes) {
+				end = len(quotes)
+			}
+			return quotes[start:end], nil
+		}
+		return quotes, nil
 	case Postgres:
-		// Fetch quotes from Postgres database
+		// Build the query with sorting and pagination
 		query := `
 			SELECT id, text, author, created_at
 			FROM quotes
 		`
+
+		// Add ORDER BY clause
+		if sortBy != "" {
+			orderBy := "created_at" // default
+			switch sortBy {
+			case "id":
+				orderBy = "id"
+			case "author":
+				orderBy = "author"
+			case "text":
+				orderBy = "text"
+			case "created_at":
+				orderBy = "created_at"
+			}
+
+			order := "ASC"
+			if sortOrder == "desc" {
+				order = "DESC"
+			}
+			query += fmt.Sprintf(" ORDER BY %s %s", orderBy, order)
+		} else {
+			query += " ORDER BY created_at DESC"
+		}
+
+		// Add LIMIT and OFFSET
+		if limit > 0 {
+			query += fmt.Sprintf(" LIMIT %d OFFSET %d", limit, offset)
+		}
+
 		ctx, cancel := context.WithTimeout(context.Background(), db.queryTimeout)
 		defer cancel()
 
