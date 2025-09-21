@@ -1,12 +1,16 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
+	"os/signal"
 	"qotd/cmd/api/database"
+	"syscall"
+	"time"
 
 	"github.com/julienschmidt/httprouter"
 )
@@ -70,12 +74,61 @@ func main() {
 	fmt.Println("Environment: " + config.env)
 	router := config.routes()
 	config.db.Connect()
-	err := http.ListenAndServe(":"+fmt.Sprint(config.port), router)
-	// release the database resources before exiting
-	defer config.db.Disconnect()
-	if err != nil {
-		fmt.Print("\n")
-		fmt.Print(err)
+
+	// Create HTTP server
+	server := &http.Server{
+		Addr:         ":" + fmt.Sprint(config.port),
+		Handler:      router,
+		IdleTimeout:  time.Minute,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 30 * time.Second,
 	}
-	os.Exit(1)
+
+	// Channel to listen for interrupt signal
+	shutdownError := make(chan error)
+
+	// Start a goroutine to listen for interrupt signals
+	go func() {
+		quit := make(chan os.Signal, 1)
+		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+		s := <-quit
+
+		config.logger.Info("shutting down server", "signal", s.String())
+
+		// Create a context with a timeout for shutdown
+		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+		defer cancel()
+
+		// Attempt graceful shutdown
+		err := server.Shutdown(ctx)
+		if err != nil {
+			shutdownError <- err
+		}
+
+		config.logger.Info("completing background tasks", "addr", server.Addr)
+
+		// Close database connection
+		config.db.Disconnect()
+
+		config.logger.Info("stopped server", "addr", server.Addr)
+		close(shutdownError)
+	}()
+
+	config.logger.Info("starting server", "addr", server.Addr, "env", config.env)
+
+	// Start the server
+	err := server.ListenAndServe()
+	if err != nil && err != http.ErrServerClosed {
+		config.logger.Error("server error", "error", err)
+		os.Exit(1)
+	}
+
+	// Wait for shutdown to complete or timeout
+	err = <-shutdownError
+	if err != nil {
+		config.logger.Error("shutdown error", "error", err)
+		os.Exit(1)
+	}
+
+	config.logger.Info("stopped server", "addr", server.Addr)
 }
