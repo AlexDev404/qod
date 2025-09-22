@@ -68,7 +68,7 @@ func (ctx *Database) Connect() error {
 }
 
 func (db *Database) Disconnect() error {
-	// @todo Implement database disconnection logic
+	// todo-complete Implement database disconnection logic
 	switch db.dbType {
 	case InMemory:
 		// Disconnect from in-memory database
