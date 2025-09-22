@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"qotd/cmd/api/types"
 	"strings"
 	"sync"
 	"time"
@@ -9,58 +10,24 @@ import (
 	"github.com/rs/cors"
 )
 
-// RateLimiter represents a token bucket rate limiter
-type RateLimiter struct {
-	tokens     float64
-	maxTokens  float64
-	refillRate float64
-	lastRefill time.Time
-	mutex      sync.Mutex
-}
-
 // NewRateLimiter creates a new rate limiter
-func NewRateLimiter(maxTokens, refillRate float64) *RateLimiter {
-	return &RateLimiter{
-		tokens:     maxTokens,
-		maxTokens:  maxTokens,
-		refillRate: refillRate,
-		lastRefill: time.Now(),
+func NewRateLimiter(maxTokens, refillRate float64) *types.RateLimiter {
+	return &types.RateLimiter{
+		Tokens:     maxTokens,
+		MaxTokens:  maxTokens,
+		RefillRate: refillRate,
+		LastRefill: time.Now(),
 	}
-}
-
-// Allow checks if a request is allowed based on the rate limit
-func (rl *RateLimiter) Allow() bool {
-	rl.mutex.Lock()
-	defer rl.mutex.Unlock()
-
-	now := time.Now()
-	elapsed := now.Sub(rl.lastRefill).Seconds()
-
-	// Refill tokens based on elapsed time
-	rl.tokens += elapsed * rl.refillRate
-	if rl.tokens > rl.maxTokens {
-		rl.tokens = rl.maxTokens
-	}
-
-	rl.lastRefill = now
-
-	// Check if we have enough tokens
-	if rl.tokens >= 1 {
-		rl.tokens--
-		return true
-	}
-
-	return false
 }
 
 // Global rate limiters for different IPs
 var (
-	globalRateLimiters = make(map[string]*RateLimiter)
+	globalRateLimiters = make(map[string]*types.RateLimiter)
 	rateLimiterMutex   = sync.RWMutex{}
 )
 
 // getRateLimiter gets or creates a rate limiter for an IP address
-func getRateLimiter(ip string) *RateLimiter {
+func getRateLimiter(ip string) *types.RateLimiter {
 	rateLimiterMutex.RLock()
 	limiter, exists := globalRateLimiters[ip]
 	rateLimiterMutex.RUnlock()
@@ -85,12 +52,12 @@ func cleanupOldRateLimiters() {
 	for range ticker.C {
 		rateLimiterMutex.Lock()
 		for ip, limiter := range globalRateLimiters {
-			limiter.mutex.Lock()
+			limiter.Mutex.Lock()
 			// Remove limiters that haven't been used for 10 minutes
-			if time.Since(limiter.lastRefill) > 10*time.Minute {
+			if time.Since(limiter.LastRefill) > 10*time.Minute {
 				delete(globalRateLimiters, ip)
 			}
-			limiter.mutex.Unlock()
+			limiter.Mutex.Unlock()
 		}
 		rateLimiterMutex.Unlock()
 	}
@@ -124,16 +91,17 @@ func (c *serverConfig) rateLimitMiddleware(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Skip rate limiting for health check
-		if strings.Contains(r.URL.Path, "healthcheck") {
-			next.ServeHTTP(w, r)
-			return
-		}
+		// if strings.Contains(r.URL.Path, "healthcheck") {
+		// 	next.ServeHTTP(w, r)
+		// 	return
+		// }
 
 		clientIP := getClientIP(r)
 		limiter := getRateLimiter(clientIP)
 
 		if !limiter.Allow() {
 			http.Error(w, "Rate limit exceeded. Please try again later.", http.StatusTooManyRequests)
+			c.logger.Error("[RL] ip: ", clientIP, " Rate limit exceeded")
 			return
 		}
 

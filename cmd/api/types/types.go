@@ -1,6 +1,9 @@
 package types
 
-import "time"
+import (
+	"sync"
+	"time"
+)
 
 type Quote struct {
 	ID        int       `json:"id"`
@@ -52,4 +55,38 @@ type UserUpdateRequest struct {
 	LastName  *string `json:"last_name,omitempty"`
 	Bio       *string `json:"bio,omitempty"`
 	AvatarURL *string `json:"avatar_url,omitempty"`
+}
+
+// RateLimiter represents a token bucket rate limiter
+type RateLimiter struct {
+	Tokens     float64
+	MaxTokens  float64
+	RefillRate float64
+	LastRefill time.Time
+	Mutex      sync.Mutex
+}
+
+// Allow checks if a request is allowed based on the rate limit
+func (rl *RateLimiter) Allow() bool {
+	rl.Mutex.Lock()
+	defer rl.Mutex.Unlock()
+
+	now := time.Now()
+	elapsed := now.Sub(rl.LastRefill).Seconds()
+
+	// Refill tokens based on elapsed time
+	rl.Tokens += elapsed * rl.RefillRate
+	if rl.Tokens > rl.MaxTokens {
+		rl.Tokens = rl.MaxTokens
+	}
+
+	rl.LastRefill = now
+
+	// Check if we have enough tokens
+	if rl.Tokens >= 1 {
+		rl.Tokens--
+		return true
+	}
+
+	return false
 }

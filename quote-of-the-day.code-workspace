@@ -5,6 +5,9 @@
 		},
 		{
 			"path": "../qod-fe"
+		},
+		{
+			"path": "../qod-test-random"
 		}
 	],
 	"settings": {}
